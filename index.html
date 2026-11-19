@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stage 3 - Scrolling Rows</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    position: fixed;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background: #e8dcc8;
+  }
+  .scene {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    aspect-ratio: 2752 / 1536;
+  }
+  .scene img {
+    position: absolute;
+    height: auto;
+    display: block;
+  }
+  .room {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .bookcase {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 21.76%;
+    width: 60%;
+  }
+  .end-table {
+    left: 12.40%;
+    bottom: 5.65%;
+    width: 30.20%;
+  }
+  .couch {
+    left: -8.48%;
+    bottom: -4.85%;
+    width: 55.58%;
+  }
+  .coffee-table {
+    left: 24.27%;
+    bottom: -2.14%;
+    width: 18.49%;
+  }
+  .planter {
+    left: 71.10%;
+    bottom: 9.98%;
+    width: 19.57%;
+  }
+  .polaroid {
+    left: 23.68%;
+    bottom: 28.32%;
+    width: 11.82%;
+  }
+  .succulent {
+    left: 20.15%;
+    bottom: 29.35%;
+    width: 8.48%;
+  }
+
+  /* Pill slots: one rectangle per pill opening, 3 per row. Each slot fits
+     inside its capsule opening, inset from the curved ends so rectangular
+     books never overlap the wood. The gaps between slots are the dividers:
+     there is no element there at all, so nothing can be placed or tapped
+     there. The books are never reshaped: they stay plain rectangles.
+     Each pill slot is its own shelf with its own books and its own scroll
+     state; scrolling one pill never moves any other pill. */
+  .pill-slot {
+    position: absolute;
+    overflow: hidden;
+    background: transparent;
+    cursor: grab;
+    touch-action: none;
+    outline: none;
+  }
+  .pill-slot:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.65);
+    outline-offset: -2px;
+  }
+  .pill-slot.dragging { cursor: grabbing; }
+  .track-inner {
+    display: flex;
+    align-items: flex-end;
+    height: 100%;
+    width: max-content;
+    will-change: transform;
+  }
+  .track-set {
+    display: flex;
+    align-items: flex-end;
+    flex-shrink: 0;
+    height: 100%;
+  }
+  .spine {
+    flex-shrink: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .slot {
+    flex-shrink: 0;
+    background: transparent;
+  }
+  .stack {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+  }
+  .stack-bar {
+    flex: 1;
+    border-radius: 0;
+    box-shadow: none;
+  }
+</style>
+</head>
+<body>
+<div class="scene">
+<img class="room" alt="" src="https://static.wixstatic.com/media/acde14_679ba13e44704abe9e77ad231308af61~mv2.jpg">
+<img class="bookcase" alt="" src="https://static.wixstatic.com/media/acde14_a5c3c5f394ae4d90b83c31dc4ae696ee~mv2.png">
+<div class="pill-slot" data-row="1" data-slot="0" tabindex="0" style="left: 30.44%; top: 23.47%; width: 9.29%; height: 10.63%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="1" data-slot="1" tabindex="0" style="left: 50.17%; top: 23.47%; width: 7.24%; height: 10.63%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="1" data-slot="2" tabindex="0" style="left: 68.70%; top: 23.47%; width: 5.93%; height: 10.63%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="2" data-slot="0" tabindex="0" style="left: 24.45%; top: 36.37%; width: 9.42%; height: 10.63%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="2" data-slot="1" tabindex="0" style="left: 44.72%; top: 36.37%; width: 11.60%; height: 10.63%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="2" data-slot="2" tabindex="0" style="left: 65.43%; top: 36.37%; width: 8.55%; height: 10.63%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="3" data-slot="0" tabindex="0" style="left: 30.41%; top: 49.06%; width: 9.35%; height: 10.51%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="3" data-slot="1" tabindex="0" style="left: 50.14%; top: 49.06%; width: 7.30%; height: 10.51%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="3" data-slot="2" tabindex="0" style="left: 68.67%; top: 49.06%; width: 6.00%; height: 10.51%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="4" data-slot="0" tabindex="0" style="left: 24.41%; top: 61.56%; width: 9.48%; height: 10.51%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="4" data-slot="1" tabindex="0" style="left: 44.69%; top: 61.56%; width: 11.66%; height: 10.51%;"><div class="track-inner"></div></div>
+<div class="pill-slot" data-row="4" data-slot="2" tabindex="0" style="left: 65.40%; top: 61.56%; width: 8.61%; height: 10.51%;"><div class="track-inner"></div></div>
+<img class="end-table" alt="" src="https://static.wixstatic.com/media/acde14_deef36596d9c44a8b0b94a9f185530f1~mv2.png">
+<img class="polaroid" alt="" src="https://static.wixstatic.com/media/acde14_cd01cc11ca6d4bd4b5a3bab0ecc8dc34~mv2.png">
+<img class="succulent" alt="" src="https://static.wixstatic.com/media/acde14_a4a8a793f61d4de292d7c1ae629c5cd0~mv2.png">
+<img class="couch" alt="" src="https://static.wixstatic.com/media/acde14_79be0be221404264b517f940740afa53~mv2.png">
+<img class="coffee-table" alt="" src="https://static.wixstatic.com/media/acde14_70d4011dd3694af0a0b97fca7849c76d~mv2.png">
+<img class="planter" alt="" src="https://static.wixstatic.com/media/acde14_e01926675145477785ba33fdc8359456~mv2.png">
+</div>
+<script>
+(function () {
+  var PALETTE = ["#6e2b2b","#2e4a33","#2b3a55","#a67c2e","#3a3a3a","#5a6e8c","#5b3a52","#8a6f4d","#6b7a5e","#8a4a2b","#2f5d5a","#cbb89a"];
+  var PILL_SETS = [
+    ["9.29:0","7.00:0","1.80:88:0","2.20:74:1","1.60:92:2","9.00:0","7.00:0","1.80:88:0","2.20:74:1","1.60:92:2","9.00:0","7.00:0","1.80:88:0","2.20:74:1","1.60:92:2","9.00:0"],
+    ["0.72:0","1.50:88:0","1.40:74:1","1.37:92:2","2.24:0","2.20:74:1","1.60:92:2","2.00:66:3","1.50:80:4","2.40:90:5","2.00:0","1.80:84:7","2.20:64:8","1.60:78:9","2.00:88:10","1.50:74:11","2.00:0","1.70:66:1","1.80:80:2","2.20:90:3","1.60:70:4","2.00:84:5","2.00:0","2.40:78:7","1.70:88:8","1.80:74:9","2.20:92:10","1.60:66:11","2.00:0","1.50:90:1"],
+    ["0.59:0","1.40:80:3","1.50:90:4","1.25:70:5","1.19:0","1.60:92:2","2.00:66:3","1.50:80:4","2.40:90:5","1.70:70:6","2.00:0","2.20:64:8","1.60:78:9","2.00:88:10","1.50:74:11","2.40:92:0","2.00:0","1.80:80:2","2.20:90:3","1.60:70:4","2.00:84:5","1.50:64:6","2.00:0","1.70:88:8","1.80:74:9","2.20:92:10","1.60:66:11","2.00:80:0","2.00:0","2.40:70:2","1.70:84:3"],
+    ["0.94:0","1.60:76:5","1.50:88:6","1.40:68:7","1.34:94:8","2.64:0","2.00:66:3","1.50:80:4","2.40:90:5","1.70:70:6","1.80:84:7","2.00:0","1.60:78:9","2.00:88:10","1.50:74:11","2.40:92:0","1.70:66:1","2.00:0","2.20:90:3","1.60:70:4","2.00:84:5","1.50:64:6","2.40:78:7","2.00:0","1.80:74:9","2.20:92:10","1.60:66:11","2.00:80:0","1.50:90:1","2.00:0"],
+    ["11.60:0","7.00:0","1.50:92:0","2.40:66:1","1.70:80:2","9.00:0","7.00:0","1.50:92:0","2.40:66:1","1.70:80:2","9.00:0"],
+    ["1.28:0","1.60:84:9","1.50:78:10","1.60:90:11","2.57:0","2.40:90:5","1.70:70:6","1.80:84:7","2.20:64:8","1.60:78:9","2.00:0","1.50:74:11","2.40:92:0","1.70:66:1","1.80:80:2","2.20:90:3","2.00:0","2.00:84:5","1.50:64:6","2.40:78:7","1.70:88:8","1.80:74:9","2.00:0","1.60:66:11","2.00:80:0","1.50:90:1","2.40:70:2","1.70:84:3","2.00:0"],
+    ["1.87:0","1.50:72:0","1.40:86:1","1.31:80:2","3.27:0","1.70:70:6","1.80:84:7","2.20:64:8","1.60:78:9","2.00:88:10","2.00:0","2.40:92:0","1.70:66:1","1.80:80:2","2.20:90:3","1.60:70:4","2.00:0","1.50:64:6","2.40:78:7","1.70:88:8","1.80:74:9","2.20:92:10","2.00:0","2.00:80:0","1.50:90:1","2.40:70:2","1.70:84:3","1.80:64:4","2.00:0"],
+    ["2.48:0","2.04:S:3,4,5","1.00:82:6","1.04:76:7","0.73:0","1.80:84:7","2.20:64:8","1.60:78:9","2.00:88:10","1.50:74:11","2.00:0","1.70:66:1","1.80:80:2","2.20:90:3","1.60:70:4","2.00:84:5","2.00:0","2.40:78:7","1.70:88:8","1.80:74:9","2.20:92:10","1.60:66:11","2.00:0","1.50:90:1","2.40:70:2","1.70:84:3","1.80:64:4","2.20:78:5","2.00:0","2.00:74:7"],
+    ["0.60:0","1.40:88:8","1.50:72:9","1.30:84:10","1.20:0","2.20:64:8","1.60:78:9","2.00:88:10","1.50:74:11","2.40:92:0","2.00:0","1.80:80:2","2.20:90:3","1.60:70:4","2.00:84:5","1.50:64:6","2.00:0","1.70:88:8","1.80:74:9","2.20:92:10","1.60:66:11","2.00:80:0","2.00:0","2.40:70:2","1.70:84:3","1.80:64:4","2.20:78:5","1.60:88:6","2.00:0","1.50:92:8","2.40:66:9"],
+    ["1.42:0","1.70:78:11","1.80:90:0","1.71:66:1","2.84:0","1.60:78:9","2.00:88:10","1.50:74:11","2.40:92:0","1.70:66:1","2.00:0","2.20:90:3","1.60:70:4","2.00:84:5","1.50:64:6","2.40:78:7","2.00:0","1.80:74:9","2.20:92:10","1.60:66:11","2.00:80:0","1.50:90:1","2.00:0","1.70:84:3","1.80:64:4","2.20:78:5","1.60:88:6","2.00:74:7","2.00:0"],
+    ["1.17:0","1.80:80:2","1.70:92:3","1.90:76:4","1.60:86:5","1.75:70:6","1.75:0","2.00:88:10","1.50:74:11","2.40:92:0","1.70:66:1","1.80:80:2","2.00:0","1.60:70:4","2.00:84:5","1.50:64:6","2.40:78:7","1.70:88:8","2.00:0","2.20:92:10","1.60:66:11","2.00:80:0","1.50:90:1","2.40:70:2","2.00:0","1.80:64:4","2.20:78:5","1.60:88:6","2.00:74:7","1.50:92:8"],
+    ["2.15:0","1.40:84:7","1.30:78:8","1.17:90:9","2.58:0","1.50:74:11","2.40:92:0","1.70:66:1","1.80:80:2","2.20:90:3","2.00:0","2.00:84:5","1.50:64:6","2.40:78:7","1.70:88:8","1.80:74:9","2.00:0","1.60:66:11","2.00:80:0","1.50:90:1","2.40:70:2","1.70:84:3","2.00:0","2.20:78:5","1.60:88:6","2.00:74:7","1.50:92:8","2.40:66:9","2.00:0"],
+  ];
+  function wrap(x, half) { x = x % half; return x < 0 ? x + half : x; }
+  var slotStates = [];
+  var slots = Array.prototype.slice.call(document.querySelectorAll(".pill-slot"));
+  slots.forEach(function (slot, g) {
+    var rowNum = parseInt(slot.getAttribute("data-row"), 10);
+    // Each pill is its own shelf with its own set, measured from the
+    // Tribesigns reference photo: book groups start about 0.10 into the
+    // opening and end about 0.69-0.72, leaving the right end for decor or
+    // breathing room; two pills are left mostly empty for decor; one pill
+    // (row 3, middle) has a flat stack of 3 books lying flat, with a decor
+    // gap at its left and upright books at its right. One half is about
+    // 54vw wide, far wider than any pill slot (about 6 to 12vw), so a pill
+    // never runs out of books while scrolling. The two identical halves
+    // make the loop wrap with no jump.
+    var def = PILL_SETS[g];
+    var items = def.map(function (s) {
+      var p = s.split(":");
+      if (p[1] === "S") {
+        return { w: parseFloat(p[0]), stack: true, colors: p[2].split(",").map(function (x) { return parseInt(x, 10); }) };
+      }
+      return { w: parseFloat(p[0]), h: parseFloat(p[1]), c: parseInt(p[2], 10) };
+    });
+    var half = 0;
+    var bounds = [0];
+    items.forEach(function (it) { half += it.w; bounds.push(half); });
+    function makeSet() {
+      var set = document.createElement("div");
+      set.className = "track-set";
+      items.forEach(function (it) {
+        var el = document.createElement("div");
+        if (it.stack) {
+          el.className = "stack";
+          el.style.width = it.w + "vw";
+          el.style.height = "30%";
+          it.colors.forEach(function (c, i) {
+            var bar = document.createElement("div");
+            bar.className = "stack-bar";
+            bar.style.background = PALETTE[c % PALETTE.length];
+            bar.style.width = [100, 90, 95][i % 3] + "%";
+            el.appendChild(bar);
+          });
+        } else if (it.h === 0) {
+          el.className = "slot";
+          el.style.width = it.w + "vw";
+          el.style.height = "100%";
+        } else {
+          el.className = "spine";
+          el.style.width = it.w + "vw";
+          el.style.height = it.h + "%";
+          el.style.background = PALETTE[it.c % PALETTE.length];
+        }
+        set.appendChild(el);
+      });
+      return set;
+    }
+    var inner = slot.querySelector(".track-inner");
+    inner.appendChild(makeSet());
+    inner.appendChild(makeSet());
+    var state = { pill: g, row: rowNum, slot: slot, inner: inner, half: half, bounds: bounds, x: 0, dragging: false, startClientX: 0, startX: 0 };
+    function apply() { inner.style.transform = "translate3d(" + (-state.x) + "vw, 0, 0)"; }
+    function snap() {
+      var best = 0, bestD = Infinity;
+      bounds.forEach(function (b) {
+        var bb = b % half;
+        var d = Math.abs(state.x - bb);
+        if (d < bestD) { bestD = d; best = bb; }
+      });
+      state.x = best;
+      apply();
+    }
+    slot.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      var d = e.deltaX || e.deltaY || 0;
+      state.x = wrap(state.x + d * 100 / window.innerWidth, half);
+      apply();
+    }, { passive: false });
+    slot.addEventListener("pointerdown", function (e) {
+      state.dragging = true;
+      state.startClientX = e.clientX;
+      state.startX = state.x;
+      slot.classList.add("dragging");
+      try { slot.setPointerCapture(e.pointerId); } catch (err) {}
+      slot.focus();
+    });
+    slot.addEventListener("pointermove", function (e) {
+      if (!state.dragging) return;
+      var dx = e.clientX - state.startClientX;
+      state.x = wrap(state.startX - dx * 100 / window.innerWidth, half);
+      apply();
+    });
+    function endDrag() {
+      if (!state.dragging) return;
+      state.dragging = false;
+      slot.classList.remove("dragging");
+      snap();
+    }
+    slot.addEventListener("pointerup", endDrag);
+    slot.addEventListener("pointercancel", endDrag);
+    slot.addEventListener("keydown", function (e) {
+      var b = null, i;
+      if (e.key === "ArrowRight") {
+        for (i = 0; i < bounds.length; i++) { if (bounds[i] > state.x + 0.001) { b = bounds[i]; break; } }
+        if (b === null) b = 0;
+        state.x = b % half;
+        apply();
+        e.preventDefault();
+      } else if (e.key === "ArrowLeft") {
+        for (i = bounds.length - 1; i >= 0; i--) { if (bounds[i] < state.x - 0.001) { b = bounds[i]; break; } }
+        if (b === null) b = bounds[bounds.length - 2];
+        state.x = b % half;
+        apply();
+        e.preventDefault();
+      }
+    });
+    apply();
+    slotStates.push(state);
+  });
+  window.__bookshelfTracks = slotStates;
+})();
+</script>
+</body>
+</html>
